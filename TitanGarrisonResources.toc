@@ -1,0 +1,6 @@
+## Interface: 60000
+## Title: Titan Panel [Garrison Resources]
+## Notes: Titan Panel plugin that shows your Garrison Resources
+## Dependencies: Titan
+## Version: 4.0.001
+TitanGarrisonResources.lua
