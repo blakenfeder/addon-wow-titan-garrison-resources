@@ -12,10 +12,10 @@ L["tooltipTitle"] = "Garrison Resources"
 L["tooltipDescription"] = "Earn resources to build-up and\rexpand your garrison."
 L["tooltipCountLabel"] = "Total Maximum: "
 
-local menutext = "Titan|cffff8800 Garrison Resources|r"
+local menutext = "Titan|cffff8800 "..L["tooltipTitle"].."|r"
 local ID = "GR"
-local elap, GR= 0, 0.0
-local GRt
+local elap, currencyCount = 0, 0.0
+local currencyMaximum
 
 -- Main button frame and addon base
 local f = CreateFrame("Button", "TitanPanelGRButton", CreateFrame("Frame", nil, UIParent), "TitanPanelComboTemplate")
@@ -78,8 +78,8 @@ function f:ADDON_LOADED(a1)
 		
 		name, isHeader, isExpanded, isUnused, isWatched, count, icon, maximum, hasWeeklyLimit, currentWeeklyAmount, unknown = GetCurrencyListInfo(CurrencyIndex)
 
-		 GR = count
-		GRt = maximum
+		 currencyCount = count
+		currencyMaximum = maximum
 		
 		TitanPanelButton_UpdateButton(ID)
 		elap = 0
@@ -93,20 +93,20 @@ end
 ----------------------------------------------
 function TitanPanelGRButton_GetButtonText()
 ----------------------------------------------
-	local GRtext
-	if not GR then
-		GRtext = TitanUtils_GetHighlightText("??")
+	local currencyCountText
+	if not currencyCount then
+		currencyCountText = TitanUtils_GetHighlightText("??")
 	else	
-		GRtext = TitanUtils_GetHighlightText(string.format("%.0f", GR) .."")
+		currencyCountText = TitanUtils_GetHighlightText(string.format("%.0f", currencyCount) .."")
 	end
-	return L["buttonLabel"], GRtext
+	return L["buttonLabel"], currencyCountText
 end
 
 -----------------------------------------------
 function TitanPanelGRButton_GetTooltipText()
 -----------------------------------------------
 
-return L["tooltipDescription"].."\r                                                                     \r"..L["tooltipCountLabel"]..TitanUtils_GetHighlightText(GR.."/"..GRt)
+return L["tooltipDescription"].."\r                                                                     \r"..L["tooltipCountLabel"]..TitanUtils_GetHighlightText(currencyCount.."/"..currencyMaximum)
 
 end
 
