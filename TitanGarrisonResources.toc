@@ -1,7 +1,23 @@
-## Interface: 60000
-## Title: Titan Panel [|cffeda55fGarrison Resources|r] |cff00aa001.0.1.60000|r
-## Notes: Titan Panel plugin that shows your Garrison Resources
+## Interface: 90207
+
+## Title: Titan Panel [|cffeda55fGarrison Resources|r] |cff00aa001.0.2.90207|r
 ## Author: Blakenfeder
+## Version: 1.0.2.90207
+
+## Notes: Adds Garrison Resources tracking to Titan Panel
+
 ## Dependencies: Titan
-## Version: 1.0.1.60000
-TitanGarrisonResources.lua
+## RequiredDeps: Titan
+## X-Child-Of: Titan
+
+## DefaultState: Enabled
+
+## X-Category: Titan Panel, Garrison
+## X-Website: https://github.com/blakenfeder/addon-wow-titan-garrison-resources
+
+## X-Curse-Project-ID: 86998
+
+locale\Locale.enUS.lua
+locale\Locale.esMX.lua
+
+TitanGarrisonResources.xml

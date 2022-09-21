@@ -1,127 +1,150 @@
 --[[
-	TitanGarrisonResources: A simple Display of current Garrison Resources value as a percent
-	Author: Blakenfeder
-	
-	Based on addon "Titan Panel [Honor Points]" by subwired.
+  TitanGarrisonResources: A simple Display of current Garrison Resources value as a percent
+  Author: Blakenfeder
 --]]
 
--- Default translations (enUS)
-local L = {}
-L["buttonLabel"] = "Resources: "
-L["tooltipTitle"] = "Garrison Resources"
-L["tooltipDescription"] = "Earn resources to build-up and\rexpand your garrison."
-L["tooltipCountLabel"] = "Total Maximum: "
+-- Define addon base object
+local TitanGarrisonResources = {
+  Const = {
+    Id = "GarrisonResources",
+    Name = "TitanGarrisonResources",
+    DisplayName = "Titan Panel [Garrison Resources]",
+    Version = "",
+    Author = "",
+  },
+  IsInitialized = false,
+}
+function TitanGarrisonResources.GetCurrencyInfo()
+  local i = 0
+  for i = 1, C_CurrencyInfo.GetCurrencyListSize(), 1 do
+    info = C_CurrencyInfo.GetCurrencyListInfo(i)
+    if tostring(info.iconFileID) == "1005027" then
+      return info
+    end
+  end
+end
+function TitanGarrisonResources.Util_GetFormattedNumber(number)
+  if number >= 1000 then
+    return string.format("%d,%03d", number / 1000, number % 1000)
+  else
+    return string.format ("%d", number)
+  end
+end
 
-local menutext = "Titan|cffff8800 "..L["tooltipTitle"].."|r"
-local ID = "GR"
-local elap, currencyCount = 0, 0.0
+-- Load metadata
+TitanGarrisonResources.Const.Version = GetAddOnMetadata(TitanGarrisonResources.Const.Name, "Version")
+TitanGarrisonResources.Const.Author = GetAddOnMetadata(TitanGarrisonResources.Const.Name, "Author")
+
+-- Text colors
+local BKFD_C_BURGUNDY = "|cff993300"
+local BKFD_C_GRAY = "|cff999999"
+local BKFD_C_GREEN = "|cff00ff00"
+local BKFD_C_ORANGE = "|cffff8000"
+local BKFD_C_WHITE = "|cffffffff"
+local BKFD_C_YELLOW = "|cffffcc00"
+
+-- Load Library references
+local LT = LibStub("AceLocale-3.0"):GetLocale("Titan", true)
+local L = LibStub("AceLocale-3.0"):GetLocale(TitanGarrisonResources.Const.Id, true)
+
+-- Currency update variables
+local BKFD_GR_UPDATE_FREQUENCY = 0.0
+local currencyCount = 0.0
 local currencyMaximum
 
--- Main button frame and addon base
-local f = CreateFrame("Button", "TitanPanelGRButton", CreateFrame("Frame", nil, UIParent), "TitanPanelComboTemplate")
-f:SetFrameStrata("FULLSCREEN")
-f:SetScript("OnEvent", function(this, event, ...) this[event](this, ...) end)
-f:RegisterEvent("ADDON_LOADED")
+function TitanPanelGarrisonResourcesButton_OnLoad(self)
+  self.registry = {
+    id = TitanGarrisonResources.Const.Id,
+    category = "Information",
+    version = TitanGarrisonResources.Const.Version,
+    menuText = L["BKFD_TITAN_GR_MENU_TEXT"], 
+    buttonTextFunction = "TitanPanelGarrisonResourcesButton_GetButtonText",
+    tooltipTitle = L["BKFD_TITAN_GR_TOOLTIP_TITLE"],
+    tooltipTextFunction = "TitanPanelGarrisonResourcesButton_GetTooltipText",
+    icon = "Interface\\Icons\\inv_garrison_resource",
+    iconWidth = 16,
+    controlVariables = {
+      ShowIcon = true,
+      ShowLabelText = true,
+    },
+    savedVariables = {
+      ShowIcon = 1,
+      ShowLabelText = false,
+      ShowColoredText = false,
+    },
+    -- frequency = 2,
+  };
 
-
-function f:ADDON_LOADED(a1)
---print ("a1 = " .. a1)
-	if a1 ~= "TitanGarrisonResources" then -- needs to be the name of the folder that the addon is in
-	return 
-	end
-	self:UnregisterEvent("ADDON_LOADED")
-	self.ADDON_LOADED = nil
-	
-	-- Set different translations if needed
-	if GetLocale() == "esMX" then
-		L["buttonLabel"] = "Recursos: "
-		L["tooltipTitle"] = "Recursos de la fortaleza"
-		L["tooltipDescription"] = "Gana recursos para reforzar y expandir\rtu fortaleza."
-		L["tooltipCountLabel"] = "Máximo total: "
-	end
-
-	local name, isHeader, isExpanded, isUnused, isWatched, count, icon, maximum, hasWeeklyLimit, currentWeeklyAmount, unknown
-	local i = 0
-	local CurrencyIndex = 0
-	local myicon = "Interface\\Icons\\inv_garrison_resource.blp"
-	local mycheck = "Interface\\Icons\\Inv_Garrison_Resource"
-
-	self.registry = {
-		id = ID,
-		menuText = menutext,
-		buttonTextFunction = "TitanPanelGRButton_GetButtonText",
-		tooltipTitle = L["tooltipTitle"],
-		tooltipTextFunction = "TitanPanelGRButton_GetTooltipText",
-		frequency = 2,
-		icon = myicon,
-		iconWidth = 16,
-		category = "Information",
-		savedVariables = {
-			ShowIcon = 1,
-			ShowLabelText = false,
-
-		},
-	}
-	self:SetScript("OnUpdate", function(this, a1)
-		elap = elap + a1
-		if elap < 1 then return end
-
-		for i = 1, GetCurrencyListSize(), 1 do
-			
-			name, isHeader, isExpanded, isUnused, isWatched, count, icon, maximum, hasWeeklyLimit, currentWeeklyAmount, unknown = GetCurrencyListInfo(i)
-			
-			if string.lower(tostring(icon)) == string.lower(mycheck) then
-				CurrencyIndex = i
-			end
-			
-		end
-		
-		name, isHeader, isExpanded, isUnused, isWatched, count, icon, maximum, hasWeeklyLimit, currentWeeklyAmount, unknown = GetCurrencyListInfo(CurrencyIndex)
-
-		 currencyCount = count
-		currencyMaximum = maximum
-		
-		TitanPanelButton_UpdateButton(ID)
-		elap = 0
-	end)
-		
-	--TitanPanelButton_OnLoad(self)
+  self:RegisterEvent("PLAYER_ENTERING_WORLD");
+  self:RegisterEvent("PLAYER_LOGOUT");
 end
 
+function TitanPanelGarrisonResourcesButton_GetButtonText(id)
+  local currencyCountText
+  if not currencyCount then
+    currencyCountText = "??"
+  else  
+    currencyCountText = TitanGarrisonResources.Util_GetFormattedNumber(currencyCount)
+  end
 
-
-----------------------------------------------
-function TitanPanelGRButton_GetButtonText()
-----------------------------------------------
-	local currencyCountText
-	if not currencyCount then
-		currencyCountText = TitanUtils_GetHighlightText("??")
-	else	
-		currencyCountText = TitanUtils_GetHighlightText(string.format("%.0f", currencyCount) .."")
-	end
-	return L["buttonLabel"], currencyCountText
+  return L["BKFD_TITAN_GR_BUTTON_LABEL"], TitanUtils_GetHighlightText(currencyCountText)
 end
 
------------------------------------------------
-function TitanPanelGRButton_GetTooltipText()
------------------------------------------------
-
-return L["tooltipDescription"].."\r                                                                     \r"..L["tooltipCountLabel"]..TitanUtils_GetHighlightText(currencyCount.."/"..currencyMaximum)
-
+function TitanPanelGarrisonResourcesButton_GetTooltipText()
+  return
+    L["BKFD_TITAN_GR_TOOLTIP_DESCRIPTION"].."\r"..
+    "                                                                     \r"..
+    L["BKFD_TITAN_GR_TOOLTIP_COUNT_LABEL"]..
+    -- TitanUtils_GetHighlightText(string.format("%.0f", currencyCount).."/"..string.format("%.0f", currencyMaximum))
+    TitanUtils_GetHighlightText(string.format(
+      "%s/%s",
+      TitanGarrisonResources.Util_GetFormattedNumber(currencyCount),
+      TitanGarrisonResources.Util_GetFormattedNumber(currencyMaximum)
+    ))
 end
 
-local temp = {}
-local function UIDDM_Add(text, func, checked, keepShown)
-	temp.text, temp.func, temp.checked, temp.keepShownOnClick = text, func, checked, keepShown
-	UIDropDownMenu_AddButton(temp)
+function TitanPanelGarrisonResourcesButton_OnUpdate(self, elapsed)
+  BKFD_GR_UPDATE_FREQUENCY = BKFD_GR_UPDATE_FREQUENCY - elapsed;
+
+  if BKFD_GR_UPDATE_FREQUENCY <= 0 then
+    BKFD_GR_UPDATE_FREQUENCY = 1;
+
+    local info = TitanGarrisonResources.GetCurrencyInfo()
+    if (info) then
+      currencyCount = tonumber(info.quantity)
+      currencyMaximum = tonumber(info.maxQuantity)
+    end
+
+    TitanPanelButton_UpdateButton(TitanGarrisonResources.Const.Id)
+  end
 end
-----------------------------------------------------
-function TitanPanelRightClickMenu_PrepareGRMenu()
-----------------------------------------------------
-	TitanPanelRightClickMenu_AddTitle(TitanPlugins[ID].menuText)
-	
-	TitanPanelRightClickMenu_AddToggleIcon(ID)
-	TitanPanelRightClickMenu_AddToggleLabelText(ID)
-	TitanPanelRightClickMenu_AddSpacer()
-	TitanPanelRightClickMenu_AddCommand(TITAN_PANEL_MENU_HIDE, ID, TITAN_PANEL_MENU_FUNC_HIDE)
+
+function TitanPanelGarrisonResourcesButton_OnEvent(self, event, ...)
+  if (event == "PLAYER_ENTERING_WORLD") then
+    if (not TitanGarrisonResources.IsInitialized and DEFAULT_CHAT_FRAME) then
+      DEFAULT_CHAT_FRAME:AddMessage(
+        BKFD_C_YELLOW..TitanGarrisonResources.Const.DisplayName.." "..
+        BKFD_C_GREEN..TitanGarrisonResources.Const.Version..
+        BKFD_C_YELLOW.." by "..
+        BKFD_C_ORANGE..TitanGarrisonResources.Const.Author)
+      TitanPanelButton_UpdateButton(TitanGarrisonResources.Const.Id)
+      TitanGarrisonResources.IsInitialized = true
+    end
+    return;
+  end  
+  if (event == "PLAYER_LOGOUT") then
+    TitanGarrisonResources.IsInitialized = false;
+    return;
+  end
+end
+
+function TitanPanelRightClickMenu_PrepareGarrisonResourcesMenu()
+  local id = TitanGarrisonResources.Const.Id;
+
+  TitanPanelRightClickMenu_AddTitle(TitanPlugins[id].menuText)
+  
+  TitanPanelRightClickMenu_AddToggleIcon(id)
+  TitanPanelRightClickMenu_AddToggleLabelText(id)
+  TitanPanelRightClickMenu_AddSpacer()
+  TitanPanelRightClickMenu_AddCommand(LT["TITAN_PANEL_MENU_HIDE"], id, TITAN_PANEL_MENU_FUNC_HIDE)
 end
