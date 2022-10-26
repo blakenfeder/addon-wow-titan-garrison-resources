@@ -35,13 +35,23 @@ end
 TitanGarrisonResources.Const.Version = GetAddOnMetadata(TitanGarrisonResources.Const.Name, "Version")
 TitanGarrisonResources.Const.Author = GetAddOnMetadata(TitanGarrisonResources.Const.Name, "Author")
 
--- Text colors
+-- Text colors (AARRGGBB)
 local BKFD_C_BURGUNDY = "|cff993300"
 local BKFD_C_GRAY = "|cff999999"
 local BKFD_C_GREEN = "|cff00ff00"
 local BKFD_C_ORANGE = "|cffff8000"
+local BKFD_C_RED = "|cffff0000"
 local BKFD_C_WHITE = "|cffffffff"
 local BKFD_C_YELLOW = "|cffffcc00"
+
+-- Text item colors (AARRGGBB)
+local BKFD_C_COMMON = "|cffffffff"
+local BKFD_C_UNCOMMON = "|cff1eff00"
+local BKFD_C_RARE = "|cff0070dd"
+local BKFD_C_EPIC = "|cffa335ee"
+local BKFD_C_LEGENDARY = "|cffff8000"
+local BKFD_C_ARTIFACT = "|cffe5cc80"
+local BKFD_C_BLIZZARD = "|cff00ccff"
 
 -- Load Library references
 local LT = LibStub("AceLocale-3.0"):GetLocale("Titan", true)
@@ -51,6 +61,9 @@ local L = LibStub("AceLocale-3.0"):GetLocale(TitanGarrisonResources.Const.Id, tr
 local BKFD_GR_UPDATE_FREQUENCY = 0.0
 local currencyCount = 0.0
 local currencyMaximum
+local seasonalCount = 0.0
+local isSeasonal = false
+local currencyDiscovered = false
 
 function TitanPanelGarrisonResourcesButton_OnLoad(self)
   self.registry = {
@@ -59,7 +72,7 @@ function TitanPanelGarrisonResourcesButton_OnLoad(self)
     version = TitanGarrisonResources.Const.Version,
     menuText = L["BKFD_TITAN_GR_MENU_TEXT"], 
     buttonTextFunction = "TitanPanelGarrisonResourcesButton_GetButtonText",
-    tooltipTitle = L["BKFD_TITAN_GR_TOOLTIP_TITLE"],
+    tooltipTitle = BKFD_C_COMMON..L["BKFD_TITAN_GR_TOOLTIP_TITLE"],
     tooltipTextFunction = "TitanPanelGarrisonResourcesButton_GetTooltipText",
     icon = "Interface\\Icons\\inv_garrison_resource",
     iconWidth = 16,
@@ -82,25 +95,59 @@ end
 function TitanPanelGarrisonResourcesButton_GetButtonText(id)
   local currencyCountText
   if not currencyCount then
-    currencyCountText = "??"
+    currencyCountText = "0"
   else  
     currencyCountText = TitanGarrisonResources.Util_GetFormattedNumber(currencyCount)
+  end
+
+  if (currencyMaximum and not(currencyMaximum == 0) and currencyCount and currencyMaximum == currencyCount) then
+    currencyCountText = BKFD_C_RED..currencyCountText
   end
 
   return L["BKFD_TITAN_GR_BUTTON_LABEL"], TitanUtils_GetHighlightText(currencyCountText)
 end
 
 function TitanPanelGarrisonResourcesButton_GetTooltipText()
+  if (not currencyDiscovered) then
+    return
+      L["BKFD_TITAN_GR_TOOLTIP_DESCRIPTION"].."\r"..
+      " \r"..
+      TitanUtils_GetHighlightText(L["BKFD_TITAN_GR_TOOLTIP_NOT_YET_DISCOVERED"])
+  end
+
+  -- Set which total value will be displayed
+  local tooltipCurrencyCount = currencyCount
+  if (isSeasonal) then
+    tooltipCurrencyCount = seasonalCount
+  end
+
+  -- Set how the total value will be displayed
+  local totalValue = string.format(
+    "%s",
+    TitanGarrisonResources.Util_GetFormattedNumber(tooltipCurrencyCount)
+  )
+  if (currencyMaximum and not (currencyMaximum == 0)) then
+    totalValue = string.format(
+      "%s/%s",
+      TitanGarrisonResources.Util_GetFormattedNumber(tooltipCurrencyCount),
+      TitanGarrisonResources.Util_GetFormattedNumber(currencyMaximum)
+    )
+    if (tooltipCurrencyCount == currencyMaximum) then
+      totalValue = BKFD_C_RED..totalValue
+    end
+  end
+  
+  local totalLabel = L["BKFD_TITAN_GR_TOOLTIP_COUNT_LABEL_TOTAL_MAXIMUM"]
+  if (isSeasonal) then
+    totalLabel = L["BKFD_TITAN_GR_TOOLTIP_COUNT_LABEL_TOTAL_SEASONAL"]
+  elseif (not currencyMaximum or currencyMaximum == 0) then
+    totalLabel = L["BKFD_TITAN_GR_TOOLTIP_COUNT_LABEL_TOTAL"]
+  end
+
   return
     L["BKFD_TITAN_GR_TOOLTIP_DESCRIPTION"].."\r"..
-    "                                                                     \r"..
-    L["BKFD_TITAN_GR_TOOLTIP_COUNT_LABEL"]..
-    -- TitanUtils_GetHighlightText(string.format("%.0f", currencyCount).."/"..string.format("%.0f", currencyMaximum))
-    TitanUtils_GetHighlightText(string.format(
-      "%s/%s",
-      TitanGarrisonResources.Util_GetFormattedNumber(currencyCount),
-      TitanGarrisonResources.Util_GetFormattedNumber(currencyMaximum)
-    ))
+    " \r"..
+    totalLabel..TitanUtils_GetHighlightText(totalValue)
 end
 
 function TitanPanelGarrisonResourcesButton_OnUpdate(self, elapsed)
@@ -111,8 +158,11 @@ function TitanPanelGarrisonResourcesButton_OnUpdate(self, elapsed)
 
     local info = TitanGarrisonResources.GetCurrencyInfo()
     if (info) then
+      currencyDiscovered = true
       currencyCount = tonumber(info.quantity)
       currencyMaximum = tonumber(info.maxQuantity)
+      seasonalCount = tonumber(info.totalEarned)
+      isSeasonal = info.useTotalEarnedForMaxQty
     end
 
     TitanPanelButton_UpdateButton(TitanGarrisonResources.Const.Id)

@@ -1,8 +1,8 @@
-## Interface: 90207
+## Interface: 100000
 
-## Title: Titan Panel [|cffeda55fGarrison Resources|r] |cff00aa001.0.2.90207|r
+## Title: Titan Panel [|cffeda55fGarrison Resources|r] |cff00aa001.2.0.100000|r
 ## Author: Blakenfeder
-## Version: 1.0.2.90207
+## Version: 1.2.0.100000
 
 ## Notes: Adds Garrison Resources tracking to Titan Panel
 
